@@ -1,63 +1,83 @@
-import { useEffect, useRef } from "react";
-import * as faceapi from "face-api.js";
+import { useEffect, useState } from "react";
 
 import "./App.css";
+import Navbar from "./components/Navbar";
+import NewPost from "./components/NewPost";
 
 function App() {
-  const imageRef = useRef();
-  const canvasRef = useRef();
-
-  const handleImage = async () => {
-    const detections = await faceapi
-      .detectAllFaces(imageRef.current, new faceapi.TinyFaceDetectorOptions())
-      .withFaceLandmarks()
-      .withFaceExpressions();
-
-    // console.log(detections);
-    canvasRef.current.innerHtml = faceapi.createCanvasFromMedia(
-      imageRef.current
-    );
-
-    faceapi.matchDimensions(canvasRef.current, {
-      width: "940",
-      height: "650",
-    });
-
-    const resized = faceapi.resizeResults(detections, {
-      width: "940",
-      height: "650",
-    });
-
-    faceapi.draw.drawDetections(canvasRef.current, resized);
-    faceapi.draw.drawFaceExpressions(canvasRef.current, resized);
-    faceapi.draw.drawFaceLandmarks(canvasRef.current, resized);
-  };
+  const [file, setFile] = useState();
+  const [image, setImage] = useState();
 
   useEffect(() => {
-    const loadModels = () => {
-      Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-        faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-        faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
-        faceapi.nets.faceExpressionNet.loadFromUri("/models"),
-      ])
-        .then(handleImage)
-        .catch((err) => console.log(err));
+    // file && console.log(URL.createObjectURL(file));
+    const getImage = () => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        setImage({
+          url: img.src,
+          width: img.width,
+          height: img.height,
+        });
+      };
     };
-    imageRef.current && loadModels();
-  }, []);
+
+    file && getImage();
+  }, [file]);
+
+  console.log(image);
 
   return (
-    <div className="app">
-      <img
-        crossOrigin="anonymous"
-        ref={imageRef}
-        src="https://images.pexels.com/photos/1537635/pexels-photo-1537635.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-        alt=""
-        width="940"
-        height="650"
-      />
-      <canvas ref={canvasRef} width="940" height="650" />
+    <div>
+      <Navbar />
+
+      {image ? (
+        <NewPost image={image} />
+      ) : (
+        <div className="newPostCard">
+          <div className="addPost">
+            <img
+              src="https://images.pexels.com/photos/9371782/pexels-photo-9371782.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500"
+              alt=""
+              className="avatar"
+            />
+
+            <div className="postForm">
+              <input
+                type="text"
+                placeholder="What's on your mind?"
+                className="postInput"
+              />
+
+              <label htmlFor="inputFile">
+                <img
+                  className="addImg"
+                  src="https://cdn.icon-icons.com/icons2/564/PNG/512/Add_Image_icon-icons.com_54218.png"
+                  alt=""
+                />
+                <img
+                  className="addImg"
+                  src="https://icon-library.com/images/maps-icon-png/maps-icon-png-5.jpg"
+                  alt=""
+                />
+                <img
+                  className="addImg"
+                  src="https://d29fhpw069ctt2.cloudfront.net/icon/image/84451/preview.svg"
+                  alt=""
+                />
+              </label>
+              <input
+                onChange={(e) => setFile(e.target.files[0])}
+                id="inputFile"
+                style={{ display: "none" }}
+                type="file"
+              />
+
+              <button>Send</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
